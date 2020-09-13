@@ -1,6 +1,6 @@
 # 雷監視システム（LIDEN）
 
-[ライブ デモ](https://seotaro.github.io/liden-map/)
+過去のデータを使った [ライブ デモ](https://seotaro.github.io/liden-map/)
 
 ## 参考
 
