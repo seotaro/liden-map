@@ -189,6 +189,8 @@
 
   // マップを更新する。
   function updateMap() {
+    document.body.style.cursor = "progress";
+
     if (map.getLayer("lightnings")) {
       map.removeLayer("lightnings");
     }
@@ -245,9 +247,13 @@
         },
       });
     }
+
+    document.body.style.cursor = "auto";
   }
 
   function fetchLightningDatetimes() {
+    document.body.style.cursor = "progress";
+
     fetch(
       "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/datetimes.json?duration=" +
         lightningSettings.currentDuration() +
@@ -260,6 +266,8 @@
         initializeDatetimeController();
         updateDatetimeController();
         updateMap();
+
+        document.body.style.cursor = "auto";
       });
   }
 })();
