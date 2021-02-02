@@ -1,5 +1,8 @@
 (function () {
+  let current = 0;
   let datetimes = ["2020-08-12T06:00:00Z"]; // 時刻リスト。集計間隔で正規化された時刻
+
+  initializeLightingTypeController();
 
   mapboxgl.accessToken =
     "pk.eyJ1Ijoic2VvdGFybyIsImEiOiJjazA2ZjV2ODkzbmhnM2JwMGYycmc5OTVjIn0.5k-2FWYVmr5FH7E4Uk6V0g";
@@ -26,20 +29,23 @@
             datetimes[0]
         )
           .then((res) => res.json())
-          .then((datetimes) => {
-            initializeController(datetimes.datetimes);
-            updateMap(datetimes.datetimes[datetimes.datetimes.length - 1]);
+          .then((d) => {
+            datetimes = d.datetimes;
+            current = d.datetimes.length - 1;
+            initializeDatetimeController();
+            updateDatetimeController();
+            updateMap();
           });
       });
     });
 
-    initializeController(datetimes);
-    updateMap(datetimes[datetimes.length - 1]);
+    initializeDatetimeController();
+    updateDatetimeController();
+    updateMap();
   });
 
-  function initializeController(datetimes_) {
-    datetimes = datetimes_;
-
+  // 時刻コントローラーを初期化する。
+  function initializeDatetimeController() {
     // 時刻optionの生成とセット
     {
       let list = document.getElementById("datetimeList");
@@ -68,8 +74,9 @@
       el.min = 0;
       el.max = datetimes.length - 1;
       el.addEventListener("change", (ev) => {
-        updateDatetimeController(ev.target.value);
-        updateMap(datetimes[ev.target.value]);
+        current = ev.target.value;
+        updateDatetimeController();
+        updateMap();
       });
     }
 
@@ -77,73 +84,104 @@
     {
       const el = document.getElementById("datetimesSelector");
       el.addEventListener("change", (ev) => {
-        updateDatetimeController(ev.target.value);
-        updateMap(datetimes[ev.target.value]);
+        current = ev.target.value;
+        updateDatetimeController();
+        updateMap();
       });
     }
-
-    // 初期値をセットする。
-    updateDatetimeController(datetimes.length - 1);
   }
 
   // 時刻コントローラーを更新する。
-  function updateDatetimeController(index) {
+  function updateDatetimeController() {
     let selector = document.getElementById("datetimesSelector");
-    selector.value = index;
+    selector.value = current;
 
     let slider = document.getElementById("datetimesSlider");
-    slider.value = index;
+    slider.value = current;
+  }
+
+  // 放電種別コントローラーを初期化する。
+  function initializeLightingTypeController() {
+    // 放電種別区別なし
+    {
+      let el = document.getElementById("simpleLightnings");
+      el.checked = true;
+      el.addEventListener("change", (ev) => {
+        updateMap();
+      });
+    }
+
+    // 放電種別区別あり
+    {
+      let el = document.getElementById("multiLightnings");
+      el.checked = false;
+      el.addEventListener("change", (ev) => {
+        updateMap();
+      });
+    }
+  }
+
+  // 放電種別を返す。
+  function isEnableLightingType() {
+    let el = document.getElementById("multiLightnings");
+    return el.checked;
   }
 
   // マップを更新する。
-  function updateMap(t) {
-    if (map.getLayer("points")) {
-      map.removeLayer("points");
+  function updateMap() {
+    if (map.getLayer("lightnings")) {
+      map.removeLayer("lightnings");
     }
 
-    if (map.getSource("points")) {
-      map.removeSource("points");
+    if (map.getSource("lightnings")) {
+      map.removeSource("lightnings");
     }
 
-    map.addLayer({
-      id: "points",
-      type: "symbol",
-      source: {
-        type: "geojson",
-        data:
-          "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/multi/lightnings.json?basetime=" +
-          t +
-          "&duration=300",
-      },
+    let t = datetimes[current];
 
-      layout: {
-        "icon-image": [
-          "case",
-          ["==", ["get", "type"], 0],
-          "cloud-to-cloud",
-          ["==", ["get", "type"], 1],
-          "cloud-to-ground",
-          "cloud-to-cloud",
-        ],
-        "icon-size": 0.4,
-        "icon-allow-overlap": true,
-      },
-    });
+    if (isEnableLightingType()) {
+      map.addLayer({
+        id: "lightnings",
+        type: "symbol",
+        source: {
+          type: "geojson",
+          data:
+            "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/multi/lightnings.json?basetime=" +
+            t +
+            "&duration=300",
+        },
 
-    // map.addLayer({
-    //   id: "multipoint",
-    //   type: "symbol",
-    //   source: {
-    //     type: "geojson",
-    //     data:
-    //       "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/simple/lightnings.json?basetime=2020-08-12T05:35:00Z&duration=300",
-    //   },
+        layout: {
+          "icon-image": [
+            "case",
+            ["==", ["get", "type"], 0],
+            "cloud-to-cloud",
+            ["==", ["get", "type"], 1],
+            "cloud-to-ground",
+            "cloud-to-cloud",
+          ],
+          "icon-size": 0.4,
+          "icon-allow-overlap": true,
+        },
+      });
+    } else {
+      map.addLayer({
+        id: "lightnings",
+        type: "symbol",
+        source: {
+          type: "geojson",
+          data:
+            "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/simple/lightnings.json?basetime=" +
+            t +
+            "&duration=300",
+        },
 
-    //   layout: {
-    //     "icon-image": "cloud-to-cloud",
-    //     "icon-size": 0.4,
-    //     "icon-allow-overlap": true,
-    //   },
-    // });
+        layout: {
+          "icon-image": "cloud-to-cloud",
+          "icon-size": 0.4,
+          "icon-allow-overlap": true,
+        },
+      });
+    }
   }
 })();
