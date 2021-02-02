@@ -257,7 +257,7 @@
     fetch(
       "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/datetimes.json?duration=" +
         lightningSettings.currentDuration() +
-        "&count=10&basetime=" +
+        "&count=50&basetime=" +
         lightningSettings.currentDatetime()
     )
       .then((res) => res.json())
