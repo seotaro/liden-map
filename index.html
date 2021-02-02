@@ -17,6 +17,21 @@
         margin: 0;
         padding: 0;
       }
+
+      #controller {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 100;
+        width: 100%;
+      }
+      #datetimesSlider {
+        margin: 5px;
+        width: 60%;
+      }
+      #datetimesSelector {
+      }
+
       #map {
         position: absolute;
         top: 0;
@@ -26,7 +41,29 @@
     </style>
   </head>
   <body>
+    <div id="controller">
+      <input type="range" id="datetimesSlider" list="datetimeList" />
+      <datalist id="datetimeList"> </datalist>
+      <select id="datetimesSelector"></select>
+
+      <input
+        type="radio"
+        id="simpleLightnings"
+        name="lightingType"
+        value="simpleLightnings"
+      />
+      <label for="simpleLightnings">放電種別区別なし</label>
+      <input
+        type="radio"
+        id="multiLightnings"
+        name="lightingType"
+        value="multiLightnings"
+      />
+      <label for="multiLightnings">放電種別区別あり</label>
+    </div>
+
     <div id="map"></div>
+
     <script src="app.js"></script>
   </body>
 </html>

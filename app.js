@@ -1,6 +1,23 @@
+"use strict";
+
 (function () {
-  let current = 0;
-  let datetimes = ["2020-08-12T06:00:00Z"]; // 時刻リスト。集計間隔で正規化された時刻
+  class Lightning {
+    current = -1;
+    datetimes = [];
+    type = 0; // 0=放電種別区別なし、1=区別あり
+
+    constructor(datetimes) {
+      this.current = datetimes.length - 1;
+      this.datetimes = datetimes;
+      this.type = 0;
+    }
+
+    currentDatetime() {
+      return this.datetimes[this.current];
+    }
+  }
+
+  let lightning = new Lightning(["2020-08-12T06:00:00Z"]);
 
   initializeLightingTypeController();
 
@@ -26,12 +43,11 @@
 
         fetch(
           "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/datetimes.json?duration=300&count=10&basetime=" +
-            datetimes[0]
+            lightning.datetimes[0]
         )
           .then((res) => res.json())
           .then((d) => {
-            datetimes = d.datetimes;
-            current = d.datetimes.length - 1;
+            lightning = new Lightning(d.datetimes);
             initializeDatetimeController();
             updateDatetimeController();
             updateMap();
@@ -46,35 +62,23 @@
 
   // 時刻コントローラーを初期化する。
   function initializeDatetimeController() {
-    // 時刻optionの生成とセット
-    {
-      let list = document.getElementById("datetimeList");
-      while (list.lastChild) {
-        list.removeChild(list.lastChild);
-      }
-
-      let selector = document.getElementById("datetimesSelector");
-      while (selector.lastChild) {
-        selector.removeChild(selector.lastChild);
-      }
-
-      for (let i = 0; i < datetimes.length; i++) {
-        let option = document.createElement("option");
-        option.setAttribute("value", i);
-        option.innerHTML = datetimes[i];
-
-        list.appendChild(option);
-        selector.appendChild(option);
-      }
-    }
-
     // 時刻スライダー
     {
       const el = document.getElementById("datetimesSlider"); // input要素
+
+      while (el.lastChild) {
+        el.removeChild(el.lastChild);
+      }
+      for (let i = 0; i < lightning.datetimes.length; i++) {
+        let option = document.createElement("option");
+        option.setAttribute("value", i);
+        el.appendChild(option);
+      }
+
       el.min = 0;
-      el.max = datetimes.length - 1;
+      el.max = lightning.datetimes.length - 1;
       el.addEventListener("change", (ev) => {
-        current = ev.target.value;
+        lightning.current = ev.target.value;
         updateDatetimeController();
         updateMap();
       });
@@ -83,8 +87,19 @@
     // 時刻セレクター
     {
       const el = document.getElementById("datetimesSelector");
+
+      while (el.lastChild) {
+        el.removeChild(el.lastChild);
+      }
+      for (let i = 0; i < lightning.datetimes.length; i++) {
+        let option = document.createElement("option");
+        option.setAttribute("value", i);
+        option.innerHTML = lightning.datetimes[i];
+        el.appendChild(option);
+      }
+
       el.addEventListener("change", (ev) => {
-        current = ev.target.value;
+        lightning.current = ev.target.value;
         updateDatetimeController();
         updateMap();
       });
@@ -94,10 +109,10 @@
   // 時刻コントローラーを更新する。
   function updateDatetimeController() {
     let selector = document.getElementById("datetimesSelector");
-    selector.value = current;
+    selector.value = lightning.current;
 
     let slider = document.getElementById("datetimesSlider");
-    slider.value = current;
+    slider.value = lightning.current;
   }
 
   // 放電種別コントローラーを初期化する。
@@ -107,6 +122,7 @@
       let el = document.getElementById("simpleLightnings");
       el.checked = true;
       el.addEventListener("change", (ev) => {
+        lightning.type = 0;
         updateMap();
       });
     }
@@ -116,15 +132,10 @@
       let el = document.getElementById("multiLightnings");
       el.checked = false;
       el.addEventListener("change", (ev) => {
+        lightning.type = 1;
         updateMap();
       });
     }
-  }
-
-  // 放電種別を返す。
-  function isEnableLightingType() {
-    let el = document.getElementById("multiLightnings");
-    return el.checked;
   }
 
   // マップを更新する。
@@ -137,9 +148,27 @@
       map.removeSource("lightnings");
     }
 
-    let t = datetimes[current];
+    let t = lightning.currentDatetime();
 
-    if (isEnableLightingType()) {
+    if (lightning.type == 0) {
+      map.addLayer({
+        id: "lightnings",
+        type: "symbol",
+        source: {
+          type: "geojson",
+          data:
+            "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/simple/lightnings.json?basetime=" +
+            t +
+            "&duration=300",
+        },
+
+        layout: {
+          "icon-image": "cloud-to-cloud",
+          "icon-size": 0.4,
+          "icon-allow-overlap": true,
+        },
+      });
+    } else {
       map.addLayer({
         id: "lightnings",
         type: "symbol",
@@ -160,24 +189,6 @@
             "cloud-to-ground",
             "cloud-to-cloud",
           ],
-          "icon-size": 0.4,
-          "icon-allow-overlap": true,
-        },
-      });
-    } else {
-      map.addLayer({
-        id: "lightnings",
-        type: "symbol",
-        source: {
-          type: "geojson",
-          data:
-            "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/simple/lightnings.json?basetime=" +
-            t +
-            "&duration=300",
-        },
-
-        layout: {
-          "icon-image": "cloud-to-cloud",
           "icon-size": 0.4,
           "icon-allow-overlap": true,
         },
