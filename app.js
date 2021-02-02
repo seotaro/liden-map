@@ -208,7 +208,7 @@
         source: {
           type: "geojson",
           data:
-            "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/simple/lightnings.json?basetime=" +
+            "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/simple/lightnings.json?basetime=" +
             t +
             "&duration=" +
             lightningSettings.currentDuration(),
@@ -227,7 +227,7 @@
         source: {
           type: "geojson",
           data:
-            "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/multi/lightnings.json?basetime=" +
+            "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/multi/lightnings.json?basetime=" +
             t +
             "&duration=" +
             lightningSettings.currentDuration(),
@@ -255,7 +255,7 @@
     document.body.style.cursor = "progress";
 
     fetch(
-      "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/datetimes.json?duration=" +
+      "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/datetimes.json?duration=" +
         lightningSettings.currentDuration() +
         "&count=10&basetime=" +
         lightningSettings.currentDatetime()
