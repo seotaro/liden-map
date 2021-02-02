@@ -20,6 +20,7 @@
 
       #controller {
         position: absolute;
+        padding: 10px;
         top: 0;
         left: 0;
         z-index: 100;
@@ -27,7 +28,8 @@
         color: lightgray;
       }
       #datetimesSlider {
-        margin: 5px;
+        position: relative;
+        top:0.5em;
         width: 60%;
       }
 
@@ -51,9 +53,6 @@
       <div>
         <label for="durationSelector">集計間隔</label>
         <select id="durationSelector"></select>
-      </div>
-
-      <div>
         <input
           type="radio"
           id="simpleLightnings"
