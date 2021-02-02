@@ -42,24 +42,32 @@
   </head>
   <body>
     <div id="controller">
-      <input type="range" id="datetimesSlider" list="datetimeList" />
-      <datalist id="datetimeList"> </datalist>
-      <select id="datetimesSelector"></select>
+      <div>
+        <label for="datetimesSlider">時刻</label>
+        <input type="range" id="datetimesSlider" list="datetimeList" />
+        <datalist id="datetimeList"> </datalist>
+        <select id="datetimesSelector"></select>
 
-      <input
-        type="radio"
-        id="simpleLightnings"
-        name="lightingType"
-        value="simpleLightnings"
-      />
-      <label for="simpleLightnings">放電種別区別なし</label>
-      <input
-        type="radio"
-        id="multiLightnings"
-        name="lightingType"
-        value="multiLightnings"
-      />
-      <label for="multiLightnings">放電種別区別あり</label>
+        <label for="durationSelector">集計間隔</label>
+        <select id="durationSelector"></select>
+      </div>
+
+      <div>
+        <input
+          type="radio"
+          id="simpleLightnings"
+          name="lightingType"
+          value="simpleLightnings"
+        />
+        <label for="simpleLightnings">放電種別区別なし</label>
+        <input
+          type="radio"
+          id="multiLightnings"
+          name="lightingType"
+          value="multiLightnings"
+        />
+        <label for="multiLightnings">放電種別区別あり</label>
+      </div>
     </div>
 
     <div id="map"></div>

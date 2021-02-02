@@ -1,25 +1,40 @@
 "use strict";
 
 (function () {
-  class Lightning {
-    current = -1;
-    datetimes = [];
+  class LightningSettings {
     type = 0; // 0=放電種別区別なし、1=区別あり
 
+    // 時刻リスト
+    currentDatetimeIndex = -1;
+    datetimes = [];
+
+    // 集計間隔リスト
+    currentDurationIndex = -1;
+    durations = [];
+
     constructor(datetimes) {
-      this.current = datetimes.length - 1;
-      this.datetimes = datetimes;
       this.type = 0;
+
+      this.currentDatetimeIndex = datetimes.length - 1;
+      this.datetimes = datetimes;
+
+      this.currentDurationIndex = 2;
+      this.durations = [60, 150, 300, 600, 1800, 3600];
     }
 
     currentDatetime() {
-      return this.datetimes[this.current];
+      return this.datetimes[this.currentDatetimeIndex];
+    }
+
+    currentDuration() {
+      return this.durations[this.currentDurationIndex];
     }
   }
 
-  let lightning = new Lightning(["2020-08-12T06:00:00Z"]);
+  let lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
 
   initializeLightingTypeController();
+  initializeDurationController();
 
   mapboxgl.accessToken =
     "pk.eyJ1Ijoic2VvdGFybyIsImEiOiJjazA2ZjV2ODkzbmhnM2JwMGYycmc5OTVjIn0.5k-2FWYVmr5FH7E4Uk6V0g";
@@ -41,22 +56,13 @@
         if (error) throw error;
         map.addImage("cloud-to-ground", image);
 
-        fetch(
-          "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/datetimes.json?duration=300&count=10&basetime=" +
-            lightning.datetimes[0]
-        )
-          .then((res) => res.json())
-          .then((d) => {
-            lightning = new Lightning(d.datetimes);
-            initializeDatetimeController();
-            updateDatetimeController();
-            updateMap();
-          });
+        fetchLightningDatetimes();
       });
     });
 
     initializeDatetimeController();
     updateDatetimeController();
+    updateDurationController();
     updateMap();
   });
 
@@ -69,17 +75,20 @@
       while (el.lastChild) {
         el.removeChild(el.lastChild);
       }
-      for (let i = 0; i < lightning.datetimes.length; i++) {
+      for (let i = 0; i < lightningSettings.datetimes.length; i++) {
         let option = document.createElement("option");
         option.setAttribute("value", i);
         el.appendChild(option);
       }
 
       el.min = 0;
-      el.max = lightning.datetimes.length - 1;
+      el.max = lightningSettings.datetimes.length - 1;
       el.addEventListener("change", (ev) => {
-        lightning.current = ev.target.value;
-        updateDatetimeController();
+        lightningSettings.currentDatetimeIndex = ev.target.value;
+
+        let el = document.getElementById("datetimesSelector");
+        el.value = lightningSettings.currentDatetimeIndex;
+
         updateMap();
       });
     }
@@ -91,28 +100,68 @@
       while (el.lastChild) {
         el.removeChild(el.lastChild);
       }
-      for (let i = 0; i < lightning.datetimes.length; i++) {
+      for (let i = 0; i < lightningSettings.datetimes.length; i++) {
         let option = document.createElement("option");
         option.setAttribute("value", i);
-        option.innerHTML = lightning.datetimes[i];
+        option.innerHTML = lightningSettings.datetimes[i];
         el.appendChild(option);
       }
 
       el.addEventListener("change", (ev) => {
-        lightning.current = ev.target.value;
-        updateDatetimeController();
+        lightningSettings.currentDatetimeIndex = ev.target.value;
+
+        let el = document.getElementById("datetimesSlider");
+        el.value = lightningSettings.currentDatetimeIndex;
+
         updateMap();
+      });
+    }
+  }
+
+  // 集計間隔コントローラーを初期化する。
+  function initializeDurationController() {
+    // 集計間隔セレクター
+    {
+      const el = document.getElementById("durationSelector");
+
+      while (el.lastChild) {
+        el.removeChild(el.lastChild);
+      }
+      for (let i = 0; i < lightningSettings.durations.length; i++) {
+        let option = document.createElement("option");
+        option.setAttribute("value", i);
+        option.innerHTML = lightningSettings.durations[i] + "[sec]";
+        el.appendChild(option);
+      }
+
+      el.addEventListener("change", (ev) => {
+        lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
+        lightningSettings.currentDurationIndex = ev.target.value;
+
+        fetchLightningDatetimes();
       });
     }
   }
 
   // 時刻コントローラーを更新する。
   function updateDatetimeController() {
-    let selector = document.getElementById("datetimesSelector");
-    selector.value = lightning.current;
+    {
+      let el = document.getElementById("datetimesSelector");
+      el.value = lightningSettings.currentDatetimeIndex;
+    }
 
-    let slider = document.getElementById("datetimesSlider");
-    slider.value = lightning.current;
+    {
+      let el = document.getElementById("datetimesSlider");
+      el.value = lightningSettings.currentDatetimeIndex;
+    }
+  }
+
+  // 集計間隔コントローラーを更新する。
+  function updateDurationController() {
+    {
+      let el = document.getElementById("durationSelector");
+      el.value = lightningSettings.currentDurationIndex;
+    }
   }
 
   // 放電種別コントローラーを初期化する。
@@ -122,7 +171,7 @@
       let el = document.getElementById("simpleLightnings");
       el.checked = true;
       el.addEventListener("change", (ev) => {
-        lightning.type = 0;
+        lightningSettings.type = 0;
         updateMap();
       });
     }
@@ -132,7 +181,7 @@
       let el = document.getElementById("multiLightnings");
       el.checked = false;
       el.addEventListener("change", (ev) => {
-        lightning.type = 1;
+        lightningSettings.type = 1;
         updateMap();
       });
     }
@@ -148,9 +197,9 @@
       map.removeSource("lightnings");
     }
 
-    let t = lightning.currentDatetime();
+    let t = lightningSettings.currentDatetime();
 
-    if (lightning.type == 0) {
+    if (lightningSettings.type == 0) {
       map.addLayer({
         id: "lightnings",
         type: "symbol",
@@ -159,7 +208,8 @@
           data:
             "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/simple/lightnings.json?basetime=" +
             t +
-            "&duration=300",
+            "&duration=" +
+            lightningSettings.currentDuration(),
         },
 
         layout: {
@@ -177,7 +227,8 @@
           data:
             "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/multi/lightnings.json?basetime=" +
             t +
-            "&duration=300",
+            "&duration=" +
+            lightningSettings.currentDuration(),
         },
 
         layout: {
@@ -194,5 +245,21 @@
         },
       });
     }
+  }
+
+  function fetchLightningDatetimes() {
+    fetch(
+      "https://asia-northeast1-weather-282200.cloudfunctions.net/LightningAPI/v1/lightning/datetimes.json?duration=" +
+        lightningSettings.currentDuration() +
+        "&count=10&basetime=" +
+        lightningSettings.currentDatetime()
+    )
+      .then((res) => res.json())
+      .then((d) => {
+        lightningSettings = new LightningSettings(d.datetimes); // 取得した時刻リストで上書きする。
+        initializeDatetimeController();
+        updateDatetimeController();
+        updateMap();
+      });
   }
 })();
