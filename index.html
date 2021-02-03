@@ -32,6 +32,10 @@
         top:0.5em;
         width: 60%;
       }
+      #lightingCount {
+        text-align: right;
+        background-color: lightgray;
+      }
 
       #map {
         position: absolute;
@@ -48,6 +52,8 @@
         <input type="range" id="datetimesSlider" list="datetimeList" />
         <datalist id="datetimeList"> </datalist>
         <select id="datetimesSelector"></select>
+        <input type="text" id="lightingCount" size="10" readonly />
+        <label for="lightingCount">件</label>
       </div>
 
       <div>

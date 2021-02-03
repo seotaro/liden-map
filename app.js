@@ -162,6 +162,15 @@
       let el = document.getElementById("durationSelector");
       el.value = lightningSettings.currentDurationIndex;
     }
+
+  // 更新する。
+  function updateLightningsCountController(count) {
+    let el = document.getElementById("lightingCount");
+    if (count == null) {
+      el.value = "-";
+    } else {
+      el.value = count;
+    }
   }
 
   // 放電種別コントローラーを初期化する。
@@ -191,61 +200,90 @@
   function updateMap() {
     document.body.style.cursor = "progress";
 
-    if (map.getLayer("lightnings")) {
-      map.removeLayer("lightnings");
-    }
-
-    if (map.getSource("lightnings")) {
-      map.removeSource("lightnings");
-    }
-
     let t = lightningSettings.currentDatetime();
 
+    updateLightningsCountController();
     if (lightningSettings.type == 0) {
-      map.addLayer({
-        id: "lightnings",
-        type: "symbol",
-        source: {
-          type: "geojson",
-          data:
-            "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/simple/lightnings.json?basetime=" +
-            t +
-            "&duration=" +
-            lightningSettings.currentDuration(),
-        },
+      fetch(
+        "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/simple/lightnings.json?basetime=" +
+          t +
+          "&duration=" +
+          lightningSettings.currentDuration()
+      )
+        .then((res) => res.json())
+        .then((d) => {
+          if (map.getLayer("lightnings")) {
+            map.removeLayer("lightnings");
+          }
 
-        layout: {
-          "icon-image": "cloud-to-cloud",
-          "icon-size": 0.4,
-          "icon-allow-overlap": true,
-        },
-      });
+          if (map.getSource("lightnings")) {
+            map.removeSource("lightnings");
+          }
+
+          map.addLayer({
+            id: "lightnings",
+            type: "symbol",
+            source: {
+              type: "geojson",
+              data: d,
+            },
+
+            layout: {
+              "icon-image": "cloud-to-cloud",
+              "icon-size": 0.4,
+              "icon-allow-overlap": true,
+            },
+          });
+
+          updateLightningsCountController(
+            d.features[0].geometry.coordinates.length
+          );
+        });
     } else {
-      map.addLayer({
-        id: "lightnings",
-        type: "symbol",
-        source: {
-          type: "geojson",
-          data:
-            "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/multi/lightnings.json?basetime=" +
-            t +
-            "&duration=" +
-            lightningSettings.currentDuration(),
-        },
+      fetch(
+        "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/multi/lightnings.json?basetime=" +
+          t +
+          "&duration=" +
+          lightningSettings.currentDuration()
+      )
+        .then((res) => res.json())
+        .then((d) => {
+          if (map.getLayer("lightnings")) {
+            map.removeLayer("lightnings");
+          }
 
-        layout: {
-          "icon-image": [
-            "case",
-            ["==", ["get", "type"], 0],
-            "cloud-to-cloud",
-            ["==", ["get", "type"], 1],
-            "cloud-to-ground",
-            "cloud-to-cloud",
-          ],
-          "icon-size": 0.4,
-          "icon-allow-overlap": true,
-        },
-      });
+          if (map.getSource("lightnings")) {
+            map.removeSource("lightnings");
+          }
+
+          map.addLayer({
+            id: "lightnings",
+            type: "symbol",
+            source: {
+              type: "geojson",
+              data:
+                "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/multi/lightnings.json?basetime=" +
+                t +
+                "&duration=" +
+                lightningSettings.currentDuration(),
+            },
+
+            layout: {
+              "icon-image": [
+                "case",
+                ["==", ["get", "type"], 0],
+                "cloud-to-cloud",
+                ["==", ["get", "type"], 1],
+                "cloud-to-ground",
+                "cloud-to-cloud",
+              ],
+              "icon-size": 0.4,
+              "icon-allow-overlap": true,
+            },
+          });
+
+          updateLightningsCountController(d.features.length);
+        });
     }
 
     document.body.style.cursor = "auto";
