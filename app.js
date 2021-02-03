@@ -63,7 +63,6 @@
     initializeDatetimeController();
     updateDatetimeController();
     updateDurationController();
-    updateMap();
   });
 
   // 時刻コントローラーを初期化する。
@@ -158,10 +157,9 @@
 
   // 集計間隔コントローラーを更新する。
   function updateDurationController() {
-    {
-      let el = document.getElementById("durationSelector");
-      el.value = lightningSettings.currentDurationIndex;
-    }
+    let el = document.getElementById("durationSelector");
+    el.value = lightningSettings.currentDurationIndex;
+  }
 
   // 更新する。
   function updateLightningsCountController(count) {
