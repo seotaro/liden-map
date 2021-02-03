@@ -33,8 +33,12 @@
 
   let lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
 
+  initializeEventListener();
   initializeLightingTypeController();
   initializeDurationController();
+  initializeDatetimeController();
+  updateDatetimeController();
+  updateDurationController();
 
   mapboxgl.accessToken =
     "pk.eyJ1Ijoic2VvdGFybyIsImEiOiJjazA2ZjV2ODkzbmhnM2JwMGYycmc5OTVjIn0.5k-2FWYVmr5FH7E4Uk6V0g";
@@ -59,10 +63,6 @@
         fetchLightningDatetimes();
       });
     });
-
-    initializeDatetimeController();
-    updateDatetimeController();
-    updateDurationController();
   });
 
   // 時刻コントローラーを初期化する。
@@ -82,14 +82,6 @@
 
       el.min = 0;
       el.max = lightningSettings.datetimes.length - 1;
-      el.addEventListener("change", (ev) => {
-        lightningSettings.currentDatetimeIndex = ev.target.value;
-
-        let el = document.getElementById("datetimesSelector");
-        el.value = lightningSettings.currentDatetimeIndex;
-
-        updateMap();
-      });
     }
 
     // 時刻セレクター
@@ -105,15 +97,6 @@
         option.innerHTML = lightningSettings.datetimes[i];
         el.appendChild(option);
       }
-
-      el.addEventListener("change", (ev) => {
-        lightningSettings.currentDatetimeIndex = ev.target.value;
-
-        let el = document.getElementById("datetimesSlider");
-        el.value = lightningSettings.currentDatetimeIndex;
-
-        updateMap();
-      });
     }
   }
 
@@ -132,13 +115,6 @@
         option.innerHTML = lightningSettings.durations[i] + "[sec]";
         el.appendChild(option);
       }
-
-      el.addEventListener("change", (ev) => {
-        lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
-        lightningSettings.currentDurationIndex = ev.target.value;
-
-        fetchLightningDatetimes();
-      });
     }
   }
 
@@ -177,20 +153,12 @@
     {
       let el = document.getElementById("simpleLightnings");
       el.checked = true;
-      el.addEventListener("change", (ev) => {
-        lightningSettings.type = 0;
-        updateMap();
-      });
     }
 
     // 放電種別区別あり
     {
       let el = document.getElementById("multiLightnings");
       el.checked = false;
-      el.addEventListener("change", (ev) => {
-        lightningSettings.type = 1;
-        updateMap();
-      });
     }
   }
 
@@ -305,5 +273,64 @@
 
         document.body.style.cursor = "auto";
       });
+  }
+
+  function initializeEventListener() {
+    // 時刻スライダー
+    {
+      const el = document.getElementById("datetimesSlider"); // input要素
+
+      el.addEventListener("change", (ev) => {
+        lightningSettings.currentDatetimeIndex = ev.target.value;
+
+        let el = document.getElementById("datetimesSelector");
+        el.value = lightningSettings.currentDatetimeIndex;
+
+        updateMap();
+      });
+    }
+
+    // 時刻セレクター
+    {
+      const el = document.getElementById("datetimesSelector");
+
+      el.addEventListener("change", (ev) => {
+        lightningSettings.currentDatetimeIndex = ev.target.value;
+
+        let el = document.getElementById("datetimesSlider");
+        el.value = lightningSettings.currentDatetimeIndex;
+
+        updateMap();
+      });
+    }
+    // 集計間隔セレクター
+    {
+      const el = document.getElementById("durationSelector");
+
+      el.addEventListener("change", (ev) => {
+        lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
+        lightningSettings.currentDurationIndex = ev.target.value;
+
+        fetchLightningDatetimes();
+      });
+    }
+
+    // 放電種別区別なし
+    {
+      let el = document.getElementById("simpleLightnings");
+      el.addEventListener("change", (ev) => {
+        lightningSettings.type = 0;
+        updateMap();
+      });
+    }
+
+    // 放電種別区別あり
+    {
+      let el = document.getElementById("multiLightnings");
+      el.addEventListener("change", (ev) => {
+        lightningSettings.type = 1;
+        updateMap();
+      });
+    }
   }
 })();
