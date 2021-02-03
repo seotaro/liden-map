@@ -5,33 +5,56 @@
     type = 0; // 0=放電種別区別なし、1=区別あり
 
     // 時刻リスト
-    currentDatetimeIndex = -1;
-    datetimes = [];
+    datetimeIndex = -1;
+    #datetimes = [];
 
     // 集計間隔リスト
-    currentDurationIndex = -1;
-    durations = [];
+    durationIndex = -1;
+    #durations = [];
 
-    constructor(datetimes) {
+    constructor() {
       this.type = 0;
 
-      this.currentDatetimeIndex = datetimes.length - 1;
-      this.datetimes = datetimes;
+      this.datetimeIndex = 0;
+      this.#datetimes = [];
 
-      this.currentDurationIndex = 2;
-      this.durations = [60, 150, 300, 600, 1800, 3600];
+      this.durationIndex = 2;
+      this.#durations = [60, 150, 300, 600, 1800, 3600];
     }
 
-    currentDatetime() {
-      return this.datetimes[this.currentDatetimeIndex];
+    set datetimes(datetimes) {
+      this.datetimeIndex = datetimes.length - 1;
+      this.#datetimes = datetimes;
+    }
+    get datetimes() {
+      return this.#datetimes;
     }
 
-    currentDuration() {
-      return this.durations[this.currentDurationIndex];
+    set durations(durations) {
+      this.durationIndex = durations.length - 1;
+      this.#durations = durations;
+    }
+    get durations() {
+      return this.#durations;
+    }
+
+    get datetime() {
+      if (this.datetimeIndex < this.#datetimes.length) {
+        return this.#datetimes[this.datetimeIndex];
+      }
+      return;
+    }
+
+    get duration() {
+      if (this.durationIndex < this.#durations.length) {
+        return this.#durations[this.durationIndex];
+      }
+      return;
     }
   }
 
-  let lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
+  let lightningSettings = new LightningSettings();
+  lightningSettings.datetimes = ["2020-08-12T06:00:00Z"];
 
   initializeEventListener();
   initializeLightingTypeController();
@@ -122,19 +145,19 @@
   function updateDatetimeController() {
     {
       let el = document.getElementById("datetimesSelector");
-      el.value = lightningSettings.currentDatetimeIndex;
+      el.value = lightningSettings.datetimeIndex;
     }
 
     {
       let el = document.getElementById("datetimesSlider");
-      el.value = lightningSettings.currentDatetimeIndex;
+      el.value = lightningSettings.datetimeIndex;
     }
   }
 
   // 集計間隔コントローラーを更新する。
   function updateDurationController() {
     let el = document.getElementById("durationSelector");
-    el.value = lightningSettings.currentDurationIndex;
+    el.value = lightningSettings.durationIndex;
   }
 
   // 更新する。
@@ -166,7 +189,7 @@
   function updateMap() {
     document.body.style.cursor = "progress";
 
-    let t = lightningSettings.currentDatetime();
+    let t = lightningSettings.datetime;
 
     updateLightningsCountController();
     if (lightningSettings.type == 0) {
@@ -174,7 +197,7 @@
         "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/simple/lightnings.json?basetime=" +
           t +
           "&duration=" +
-          lightningSettings.currentDuration()
+          lightningSettings.duration
       )
         .then((res) => res.json())
         .then((d) => {
@@ -210,7 +233,7 @@
         "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/multi/lightnings.json?basetime=" +
           t +
           "&duration=" +
-          lightningSettings.currentDuration()
+          lightningSettings.duration
       )
         .then((res) => res.json())
         .then((d) => {
@@ -231,7 +254,7 @@
                 "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/multi/lightnings.json?basetime=" +
                 t +
                 "&duration=" +
-                lightningSettings.currentDuration(),
+                lightningSettings.duration,
             },
 
             layout: {
@@ -260,13 +283,13 @@
 
     fetch(
       "https://asia-northeast1-weather-282200.cloudfunctions.net/lightning/v1/datetimes.json?duration=" +
-        lightningSettings.currentDuration() +
+        lightningSettings.duration +
         "&count=50&basetime=" +
-        lightningSettings.currentDatetime()
+        lightningSettings.datetime
     )
       .then((res) => res.json())
       .then((d) => {
-        lightningSettings = new LightningSettings(d.datetimes); // 取得した時刻リストで上書きする。
+        lightningSettings.datetimes = d.datetimes; // 取得した時刻リストで上書きする。
         initializeDatetimeController();
         updateDatetimeController();
         updateMap();
@@ -281,10 +304,10 @@
       const el = document.getElementById("datetimesSlider"); // input要素
 
       el.addEventListener("change", (ev) => {
-        lightningSettings.currentDatetimeIndex = ev.target.value;
+        lightningSettings.datetimeIndex = ev.target.value;
 
         let el = document.getElementById("datetimesSelector");
-        el.value = lightningSettings.currentDatetimeIndex;
+        el.value = lightningSettings.datetimeIndex;
 
         updateMap();
       });
@@ -295,10 +318,10 @@
       const el = document.getElementById("datetimesSelector");
 
       el.addEventListener("change", (ev) => {
-        lightningSettings.currentDatetimeIndex = ev.target.value;
+        lightningSettings.datetimeIndex = ev.target.value;
 
         let el = document.getElementById("datetimesSlider");
-        el.value = lightningSettings.currentDatetimeIndex;
+        el.value = lightningSettings.datetimeIndex;
 
         updateMap();
       });
@@ -308,8 +331,8 @@
       const el = document.getElementById("durationSelector");
 
       el.addEventListener("change", (ev) => {
-        lightningSettings = new LightningSettings(["2020-08-12T06:00:00Z"]);
-        lightningSettings.currentDurationIndex = ev.target.value;
+        lightningSettings.datetimes = [lightningSettings.datetime];
+        lightningSettings.durationIndex = ev.target.value;
 
         fetchLightningDatetimes();
       });
